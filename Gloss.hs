@@ -18,7 +18,7 @@ import Numeric.Units.Dimensional
 
 import DimensionalVector
 
-data TPixel
+newtype TPixel = TPixel TPixel
 type DPixel = DExt TPixel Pos1 DOne
 
 pixel :: Num a => Unit DPixel a
