@@ -110,13 +110,13 @@ processEvent _ = id
 
 initialWorld = World (GameState {
   _players = 
-    [ Player (mkPosition zeroV) zeroV zero zero
-    , Player (mkPosition (400*~meter,zero)) zeroV (pi / (2 *~ one)) zero
+--    [ Player (mkPosition zeroV) zeroV zero zero
+    [ Player (mkPosition (400*~meter,zero)) zeroV (pi / (2 *~ one)) zero
     ]
   , _projectiles = []
   , _cars = 
-    [ (Car (mkPosition zeroV) (000 *~ (meter / second), zero) (pi / _2) zero, Map.empty)
-    , (Car (mkPosition (200*~meter,zero)) ((-20) *~ (meter / second), zero) (pi / _2) (1 *~ (one / second)), Map.empty)
+--    [ (Car (mkPosition zeroV) (000 *~ (meter / second), zero) (pi / _2) zero, Map.empty)
+    [ (Car (mkPosition (200*~meter,zero)) ((-20) *~ (meter / second), zero) (pi / _2) (1 *~ (one / second)), Map.empty)
     ]
   }) Map.empty "nothing happened"
 
@@ -125,9 +125,9 @@ main = do
   play (InWindow "Qwe" (800, 600) (20, 20)) (makeColor 0.2 0.2 0.2 1) 100 initialWorld 
    (fmap Pictures (
       sequence
-      [ Scale 0.1 0.1 . Text . get debugInfo
-      , Translate 0 50 . Scale 0.1 0.1 . Text . show . get gameState
-      , drawWorld img . get gameState
+--      [ Scale 0.1 0.1 . Text . get debugInfo
+--      [ Translate 0 50 . Scale 0.1 0.1 . Text . show . get gameState
+      [ drawWorld img . get gameState
       ]))
    (fmap (foldr (.) id) (sequence [processEvent, processEventDbg]))
    (\t world -> modify gameState (worldStep (realToFrac t *~ second) (get inputState world)) world)

@@ -38,7 +38,7 @@ mass = 1 *~ kilo gram
 type DMomentOfInertia = Dim Pos2 Pos1 Zero Zero Zero Zero Zero
 
 inertia :: Scalar DMomentOfInertia
-inertia = carLength * carLength * mass * (5 *~ one)
+inertia = carLength * carLength * mass / (12 *~ one)
 
 magic :: (Mul ad DLength d, Mul d DOne d) => Vector d -> Scalar DPlaneAngle -> Scalar ad -> (Vector d, Vector d)
 magic center angle amount = mapV ((center |+|) . (amount * halfLength *|) . rotateV (pi / _2)) (directionV angle, mapV negate $ directionV angle)
