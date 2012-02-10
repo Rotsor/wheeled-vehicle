@@ -98,16 +98,23 @@ rotateCar da (Car x xv a av) = Car x (rotateV da xv) (a + da) av
 -- (f_x + g_x) + xx * (g_x - f_x) = 0
 -- f_x * (1 - xx) + g_x (1 + xx) = 0
 -- g_x = - f_x * (1 - xx) / (1 + xx)
+
+-- correction: instead of a_rear_x = 0 we must solve a_rear_x = - v_y * angularVelocity
+-- (f_x + g_x) / m + r * r * (g_x - f_x) / inertia = - v_y * angularVelocity
+-- f_x + g_x + xx * (g_x - f_x) = - m * v_y * angularVelocity
+-- let yy = m * v_y * angularVelocity
+-- g_x (1 + xx) = - (m * v_y * angularVelocity + f_x * (1 - xx))
 getRearForce :: Vector DForce -> TrueCar -> Vector DForce
 getRearForce fo car = rotateV a . go . rotateCar (negate a) $ car where
   a = get direction car - pi / _2
   (fx, fy) = rotateV (negate a) fo
-  go (Car x xv _ av) = (gx, zero) where
+  
+  go (Car x (_,vy) _ av) = (gx, zero) where
     i = inertia
     r = halfLength
     m = mass
     xx = r * r * m / i
-    gx = fx * (xx - _1) / (xx + _1)
+    gx = negate (fx * (_1 - xx) + m * vy * av) / (xx + _1)
 
 getForces car input = (ff, rf) where
   rf = getRearForce ff car
