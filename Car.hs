@@ -8,6 +8,7 @@ import Position
 import Prelude()
 import Data.Label
 import Data.List
+import Control.Arrow((&&&))
 
 import Numeric.NumType (Zero, Pos1, Pos2)
 
@@ -31,7 +32,7 @@ rear car = negate halfLength `mulSV` directionV (get direction car)
 lineM = line . map (mapV toPixels)
 
 friction = 100 *~ newton
-enginePower = 1000 *~ watt
+enginePower = 10000 *~ watt
 
 mass = 1 *~ kilo gram
 
@@ -81,6 +82,10 @@ drawStats = Pictures . map drawStat where
 rotateCar :: Scalar DPlaneAngle -> TrueCar -> TrueCar
 rotateCar da (Car x xv a av) = Car x (rotateV da xv) (a + da) av
 
+limitMagnitude mag v | mv > mag = v |/ (mag / mv)
+ | otherwise = v where
+  mv = magV v
+
 -- we rotate the world so that the car stays along the "y" axis with its 
 -- front pointing in the positive direction.
 -- We want to find a force for the rear wheel such that the acceleration of rear wheel along the "x" axis stays 0
@@ -104,21 +109,34 @@ rotateCar da (Car x xv a av) = Car x (rotateV da xv) (a + da) av
 -- f_x + g_x + xx * (g_x - f_x) = - m * v_y * angularVelocity
 -- let yy = m * v_y * angularVelocity
 -- g_x (1 + xx) = - (m * v_y * angularVelocity + f_x * (1 - xx))
-getRearForce :: Vector DForce -> TrueCar -> Vector DForce
-getRearForce fo car = rotateV a . go . rotateCar (negate a) $ car where
-  a = get direction car - pi / _2
-  (fx, fy) = rotateV (negate a) fo
+getForces' :: (Scalar DForce, Scalar DForce) -> TrueCar -> (Vector DForce, Vector DForce)
+getForces' (steer, drive) (Car x v@(_,vy) _ av) = (ff, rf) where
+  (fx, fy) = ff
+  vf = v |+| r * av *| (negate _1, zero)
+  dirf = normZV vf
+  ff = limitMagnitude friction $ steer *| (rotateV (pi / _2) dirf)
   
-  go (Car x (_,vy) _ av) = (gx, zero) where
+  -- max g_y square allowed by friction
+  mgy2 = max zero $ friction * friction - rearSideForce * rearSideForce
+  mgyp | vy > zero = min (enginePower / vy)
+       | vy < zero = max (enginePower / vy)
+       | otherwise = id
+  gy = mgyp $ min (sqrt mgy2) $ max (negate $ sqrt mgy2) $ drive
+  
+  rf = (rearSideForce, gy)
+  
+  r = halfLength
+  rearSideForce = gx where
     i = inertia
-    r = halfLength
     m = mass
     xx = r * r * m / i
     gx = negate (fx * (_1 - xx) + m * vy * av) / (xx + _1)
 
-getForces car input = (ff, rf) where
-  rf = getRearForce ff car
-  ff = controlForce "tgfh"
+gf controls car = mapV (rotateV a) . getForces' controls . rotateCar (negate a) $ car where
+  a = get direction car - pi / _2
+    
+getForces car input = gf ff car where
+  ff = controlForce "tghf"
   controlForce = 
      foldr (|+|) zeroV
      . map fst
@@ -139,7 +157,7 @@ draw :: DbgCar -> Picture
 draw (car, lastInput) = Pictures [drawStats . ($ car) . uncurry getStats $ getForces car lastInput, 
   drawAt (get position car) $
   Pictures $
-    [ Color (makeColor 1 1 1 0.1) $ lineM [rear car, front car]
+    [ Color (makeColor 1 1 1 0.4) $ lineM [rear car, front car]
 --    , drawWheel (front car) (rotationVelocity halfLength (get angularVelocity car) (get direction car))
 --    , drawWheel (rear car) (rotationVelocity halfLength (get angularVelocity car) (pi + get direction car))
     ]
