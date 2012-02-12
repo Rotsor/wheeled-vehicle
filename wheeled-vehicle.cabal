@@ -48,7 +48,7 @@ Executable wheeled-vehicle
   Main-is: game.hs            
   
   -- Packages needed in order to build this package.
-  Build-depends: base, containers, fclabels, mtl, numtype, dimensional, gloss
+  Build-depends: base, containers, fclabels, mtl, numtype, dimensional, gloss == 1.6.*
   
   -- Modules not exported by this package.
   -- Other-modules:       
