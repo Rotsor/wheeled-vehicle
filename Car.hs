@@ -30,6 +30,7 @@ front car = halfLength `mulSV` directionV (get direction car)
 rear car = negate halfLength `mulSV` directionV (get direction car)
 
 lineM = line . map (mapV toPixels)
+polyM = polygon . map (mapV toPixels)
 
 friction = 100 *~ newton
 enginePower = 10000 *~ watt
@@ -55,9 +56,23 @@ rawStep :: Time -> Vector DForce -> Vector DForce -> TrueCar -> TrueCar
 rawStep dt f g car@(Car x xv a av) =
    Car
    (x $+| dt *| xv)
-   (xv |+| dt *| accel f g)
+   (v')
    (a + dt * av)
    (av + dt * aaccel f g car) where
+  
+  vMag = magV xv
+  vRot = atan2V xv
+  
+  vMagAccel :: Scalar DFrequency
+  vMagAccel = accel f g `dotV` xv / (xv `dotV` xv)
+  vRotAccel :: Scalar DFrequency
+  vRotAccel = (xv `cross` accel f g) / (xv `dotV` xv)
+  
+  vMag' = vMag * (_1 + dt * vMagAccel)
+  vRot' = vRot + dt * vRotAccel
+  
+  v' | vMag < (1e-6 *~ (meter / second)) = xv |+| dt *| accel f g
+     | otherwise = vMag' *| (cos &&& sin) vRot'
 
 v2l :: (a, a) -> [a]
 v2l (x,y) = [x,y]
@@ -88,7 +103,7 @@ limitMagnitude mag v | mv > mag = v |/ (mag / mv)
 
 -- we rotate the world so that the car stays along the "y" axis with its 
 -- front pointing in the positive direction.
--- We want to find a force for the rear wheel such that the acceleration of rear wheel along the "x" axis stays 0
+-- We want to find a side force for the rear wheel such that the acceleration of rear wheel along the "x" axis stays 0
 -- So we need to solve a_rear_x = 0
 -- a_rear_x = a_x + aa * r
 -- a_x = (f_x + g_x) / m
@@ -104,7 +119,10 @@ limitMagnitude mag v | mv > mag = v |/ (mag / mv)
 -- f_x * (1 - xx) + g_x (1 + xx) = 0
 -- g_x = - f_x * (1 - xx) / (1 + xx)
 
--- correction: instead of a_rear_x = 0 we must solve a_rear_x = - v_y * angularVelocity
+-- correction: 
+-- Actually we want the side acceleration not to be 0, but rather to keep speed of rotation 
+-- of velocity vector equal to the speed of the car body rotation.
+-- So instead of a_rear_x = 0 we must solve a_rear_x = - v_y * angularVelocity
 -- (f_x + g_x) / m + r * r * (g_x - f_x) / inertia = - v_y * angularVelocity
 -- f_x + g_x + xx * (g_x - f_x) = - m * v_y * angularVelocity
 -- let yy = m * v_y * angularVelocity
@@ -118,6 +136,7 @@ getForces' (steer, drive) (Car x v@(_,vy) _ av) = (ff, rf) where
   
   -- max g_y square allowed by friction
   mgy2 = max zero $ friction * friction - rearSideForce * rearSideForce
+  -- limitations for g_y introduced by the engine power limit
   mgyp | vy > zero = min (enginePower / vy)
        | vy < zero = max (enginePower / vy)
        | otherwise = id
@@ -157,11 +176,17 @@ draw :: DbgCar -> Picture
 draw (car, lastInput) = Pictures [drawStats . ($ car) . uncurry getStats $ getForces car lastInput, 
   drawAt (get position car) $
   Pictures $
-    [ Color (makeColor 1 1 1 0.4) $ lineM [rear car, front car]
+    [ Color (makeColor 1 1 1 0.4) $ polyM 
+       [ rear car |+| left
+       , rear car |+| right
+       , front car |+| right
+       , front car |+| left]
 --    , drawWheel (front car) (rotationVelocity halfLength (get angularVelocity car) (get direction car))
 --    , drawWheel (rear car) (rotationVelocity halfLength (get angularVelocity car) (pi + get direction car))
     ]
   ] where
+    left = (5 *~ meter) *| rotate90ccw (directionV (get direction car))
+    right = mapV negate left
     drawWheel pos vel = 
        Color yellow 
          $ lineM

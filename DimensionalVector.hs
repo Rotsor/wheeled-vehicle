@@ -18,6 +18,7 @@ module DimensionalVector
    , (|*)
    , (|/)
    , cross
+   , atan2V
    ) where
 
 import qualified Prelude as P
@@ -63,6 +64,8 @@ dotV (x1, y1) (x2, y2) = x1 * x2 + y1 * y2
 
 addV :: Vector a -> Vector a -> Vector a
 addV (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+
+atan2V (x, y) = atan2 y x
 
 infixl 6 |+|
 infixl 7 *|, |/, |*

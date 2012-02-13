@@ -5,10 +5,11 @@ module Gloss
    , pixel
    , line
    , circle
+   , polygon
    ) where
 
 
-import Graphics.Gloss.Interface.Game hiding (Vector, translate, line, circle)
+import Graphics.Gloss.Interface.Game hiding (Vector, translate, line, circle, polygon)
 import qualified Graphics.Gloss.Interface.Game as GL
 
 import Numeric.NumType
@@ -29,6 +30,9 @@ translate (x, y) = Translate (realToFrac $ x /~ pixel) (realToFrac $ y /~ pixel)
 
 line :: [Vector DPixel] -> Picture
 line = GL.line . map (mapV (realToFrac . (/~ pixel)))
+
+polygon :: [Vector DPixel] -> Picture
+polygon = GL.polygon . map (mapV (realToFrac . (/~ pixel)))
 
 circle :: Scalar DPixel -> Picture
 circle = GL.circle . (realToFrac . (/~ pixel))

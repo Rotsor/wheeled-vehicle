@@ -116,7 +116,7 @@ initialWorld = World (GameState {
   , _projectiles = []
   , _cars = 
 --    [ (Car (mkPosition zeroV) (000 *~ (meter / second), zero) (pi / _2) zero, Map.empty)
-    [ (Car (mkPosition (200*~meter,zero)) ((-20) *~ (meter / second), zero) (pi / _2) (1 *~ (one / second)), Map.empty)
+    [ (Car (mkPosition (200*~meter,zero)) ((-50) *~ (meter / second), zero) (pi / _2) (2 *~ (one / second)), Map.empty)
     ]
   }) Map.empty "nothing happened"
 
