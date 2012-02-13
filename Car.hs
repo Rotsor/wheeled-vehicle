@@ -90,7 +90,7 @@ drawStats = Pictures . map drawStat where
  drawStat (pos, vel, accel, force) = Pictures $ map draw
   [ (yellow, vel |* (0.5 *~ second))
   , (blue, force |/ (100 *~ newton) |* (50 *~ meter))
-  , (red, accel |* (0.5 *~ (second * second)))
+  --, (red, accel |* (0.5 *~ (second * second)))
   ] where
   draw (color, vector) = drawAt pos $ Color color $ lineM [zeroV, vector]
 
@@ -128,11 +128,11 @@ limitMagnitude mag v | mv > mag = v |/ (mag / mv)
 -- let yy = m * v_y * angularVelocity
 -- g_x (1 + xx) = - (m * v_y * angularVelocity + f_x * (1 - xx))
 getForces' :: (Scalar DForce, Scalar DForce) -> TrueCar -> (Vector DForce, Vector DForce)
-getForces' (steer, drive) (Car x v@(_,vy) _ av) = (ff, rf) where
+getForces' (steer, drive) (Car x v@(globalVx,vy) _ av) = (ff, rf) where
   (fx, fy) = ff
   vf = v |+| r * av *| (negate _1, zero)
   dirf = normZV vf
-  ff = limitMagnitude friction $ steer *| (rotateV (pi / _2) dirf)
+  ff = (mapV $ ((1.5 *~ one) *)) $ limitMagnitude friction $ steer *| (rotateV (pi / _2) dirf)
   
   -- max g_y square allowed by friction
   mgy2 = max zero $ friction * friction - rearSideForce * rearSideForce
@@ -142,10 +142,15 @@ getForces' (steer, drive) (Car x v@(_,vy) _ av) = (ff, rf) where
        | otherwise = id
   gy = mgyp $ min (sqrt mgy2) $ max (negate $ sqrt mgy2) $ drive
   
-  rf = (rearSideForce, gy)
+  vx = globalVx + r * av
+  
+  rf 
+   | vx < ((-3) *~ (meter / second)) = (friction, zero)
+   | vx > (3 *~ (meter / second)) = (negate friction, zero)
+   | otherwise = (rearSideForce, gy)
   
   r = halfLength
-  rearSideForce = gx where
+  rearSideForce = max (negate friction) $ min friction $ gx where
     i = inertia
     m = mass
     xx = r * r * m / i

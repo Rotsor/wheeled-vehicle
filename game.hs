@@ -11,6 +11,7 @@ import Car(Car(..), TrueCar(..))
 import qualified Car
 import Player(Player(..))
 import qualified Player
+import System.IO
 
 import Gloss
 
@@ -116,11 +117,12 @@ initialWorld = World (GameState {
   , _projectiles = []
   , _cars = 
 --    [ (Car (mkPosition zeroV) (000 *~ (meter / second), zero) (pi / _2) zero, Map.empty)
-    [ (Car (mkPosition (200*~meter,zero)) ((-50) *~ (meter / second), zero) (pi / _2) (2 *~ (one / second)), Map.empty)
+    [ (Car (mkPosition (200*~meter,zero)) ((-500) *~ (meter / second), zero) (pi / _2) (20 *~ (one / second)), Map.empty)
     ]
   }) Map.empty "nothing happened"
 
 main = do
+  hSetEncoding stderr utf8
   img <- fmap (Rotate 90) (loadBMP "fighter.bmp")
   play (InWindow "Qwe" (800, 600) (20, 20)) (makeColor 0.2 0.2 0.2 1) 100 initialWorld 
    (fmap Pictures (
